@@ -1,0 +1,30 @@
+<mujoco model="quad">
+  <option timestep="0.005" gravity="0 0 -9.81" integrator="RK4"/>
+
+  <worldbody>
+    <light diffuse=".6 .6 .6" pos="0 0 3" dir="0 0 -1"/>
+    <geom type="plane" size="5 5 0.1" rgba=".9 .9 .9 1"/>
+
+    <body name="drone" pos="0 0 0.5">
+      <freejoint name="root"/>
+      <inertial pos="0 0 0" mass="0.5" diaginertia="0.0023 0.0023 0.004"/>
+      <geom type="box" size="0.1 0.1 0.02" rgba="0.2 0.2 0.8 1" mass="0"/>
+      <site name="rotor_fr" pos=" 0.15 -0.15 0" size="0.02" rgba="1 0 0 1"/>
+      <site name="rotor_fl" pos=" 0.15  0.15 0" size="0.02" rgba="0 1 0 1"/>
+      <site name="rotor_bl" pos="-0.15  0.15 0" size="0.02" rgba="0 1 0 1"/>
+      <site name="rotor_br" pos="-0.15 -0.15 0" size="0.02" rgba="1 0 0 1"/>
+
+      <geom type="capsule" fromto="0 0 0  0.15 -0.15 0" size="0.01" mass="0.02"/>
+      <geom type="capsule" fromto="0 0 0  0.15  0.15 0" size="0.01" mass="0.02"/>
+      <geom type="capsule" fromto="0 0 0 -0.15  0.15 0" size="0.01" mass="0.02"/>
+      <geom type="capsule" fromto="0 0 0 -0.15 -0.15 0" size="0.01" mass="0.02"/>
+    </body>
+  </worldbody>
+
+  <actuator>
+    <motor site="rotor_fr" gear="0 0 1 0 0  0.02" ctrlrange="0 5" name="m_fr"/>
+    <motor site="rotor_fl" gear="0 0 1 0 0 -0.02" ctrlrange="0 5" name="m_fl"/>
+    <motor site="rotor_bl" gear="0 0 1 0 0  0.02" ctrlrange="0 5" name="m_bl"/>
+    <motor site="rotor_br" gear="0 0 1 0 0 -0.02" ctrlrange="0 5" name="m_br"/>
+  </actuator>
+</mujoco>
