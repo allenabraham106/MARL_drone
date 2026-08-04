@@ -15,6 +15,9 @@ class PIDState:
         self.z_integral = 0.0
         self.pitch_integral = 0.0
         self.roll_integral = 0.0
+        self.x_integral = 0.0
+        self.y_integral = 0.0
+
 
 def pid_controller(d, m, state, dt, target_z = 0.5, target_roll = 0.0, target_pitch = 0.0):
     # Altitude
@@ -48,6 +51,18 @@ def pid_controller(d, m, state, dt, target_z = 0.5, target_roll = 0.0, target_pi
     ctrl = np.array([thrust_fr, thrust_fl, thrust_bl, thrust_br])
     return np.clip(ctrl, 0, 5)
 
+def position_to_altitude(d, state, dt, target_x, target_y, max_tilt = 0.3):
+    x_err = target_x - d.qpos[0]
+    y_err = target_y - d.qpos[1]
+    x_vel, y_vel = d.qvel[0], d.qvel[1]
+    state.x_integral = np.clip(state.x_integral + x_err * dt, -0.5, 0.5)
+    state.y_integral = np.clip(state.y_integral + y_err * dt, -0.5, 0.5)
+    Kp_pos, Ki_pos, Kd_pos = 0.5, 0.02, 0.8
+
+    desired_pitch = Kp_pos * x_err + Ki_pos * state.x_integral - Kd_pos * x_vel
+    desired_roll = Kp_pos * y_err + Ki_pos * state.y_integral - Kd_pos * y_vel
+
+    return np.clip(desired_roll, -max_tilt, max_tilt), np.clip(desired_pitch, -max_tilt, max_tilt)
 
 def get_roll_pitch(quat):
     w, x, y, z = quat
@@ -57,14 +72,15 @@ def get_roll_pitch(quat):
 
 state = PIDState()
 dt = 0.005
+target_x, target_y = 1.0, 0.5  # pick a nonzero point to actually test movement
 
-step_count = 0
 with mujoco.viewer.launch_passive(m, d) as viewer:
     while viewer.is_running():
-        d.ctrl[:] = pid_controller(d, m, state, dt)
+        target_roll, target_pitch = position_to_altitude(
+            d, state, dt, target_x, target_y
+        )
+        d.ctrl[:] = pid_controller(
+            d, m, state, dt, target_roll=target_roll, target_pitch=target_pitch
+        )
         mujoco.mj_step(m, d)
         viewer.sync()
-
-        step_count += 1
-        if step_count % 50 == 0:  # more frequent than before, to catch it fast
-            print(f"pos: {d.qpos[:3].round(2)}  ctrl: {d.ctrl.round(2)}")
