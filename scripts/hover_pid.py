@@ -57,10 +57,10 @@ def position_to_altitude(d, state, dt, target_x, target_y, max_tilt = 0.3):
     x_vel, y_vel = d.qvel[0], d.qvel[1]
     state.x_integral = np.clip(state.x_integral + x_err * dt, -0.5, 0.5)
     state.y_integral = np.clip(state.y_integral + y_err * dt, -0.5, 0.5)
-    Kp_pos, Ki_pos, Kd_pos = 0.5, 0.02, 0.8
+    Kp_pos, Ki_pos, Kd_pos = 0.15, 0.01, 0.3
 
     desired_pitch = Kp_pos * x_err + Ki_pos * state.x_integral - Kd_pos * x_vel
-    desired_roll = Kp_pos * y_err + Ki_pos * state.y_integral - Kd_pos * y_vel
+    desired_roll = -(Kp_pos * y_err + Ki_pos * state.y_integral - Kd_pos * y_vel)
 
     return np.clip(desired_roll, -max_tilt, max_tilt), np.clip(desired_pitch, -max_tilt, max_tilt)
 
@@ -74,6 +74,7 @@ state = PIDState()
 dt = 0.005
 target_x, target_y = 1.0, 0.5  # pick a nonzero point to actually test movement
 
+step_count = 0
 with mujoco.viewer.launch_passive(m, d) as viewer:
     while viewer.is_running():
         target_roll, target_pitch = position_to_altitude(
@@ -84,3 +85,9 @@ with mujoco.viewer.launch_passive(m, d) as viewer:
         )
         mujoco.mj_step(m, d)
         viewer.sync()
+
+        step_count += 1
+        if step_count % 20 == 0:
+            print(
+                f"pos: {d.qpos[:2].round(3)}  target_roll: {np.degrees(target_roll):.1f}  target_pitch: {np.degrees(target_pitch):.1f}"
+            )
