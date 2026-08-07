@@ -77,9 +77,11 @@ target_x, target_y = 1.0, 0.5  # pick a nonzero point to actually test movement
 step_count = 0
 with mujoco.viewer.launch_passive(m, d) as viewer:
     while viewer.is_running():
+        # Lets get to this place
         target_roll, target_pitch = position_to_altitude(
             d, state, dt, target_x, target_y
         )
+        # lets hold this place
         d.ctrl[:] = pid_controller(
             d, m, state, dt, target_roll=target_roll, target_pitch=target_pitch
         )
