@@ -26,3 +26,24 @@ class HoverEnv(gym.Env):
 
         # Reset all physics states back to zero
         mujoco.mj_resetData(self.m, self.d)
+        self.d.qpos[0:3] = [0.0, 0.0, 0.5] # start position
+        self.d.qpos[3:7] = [1.0, 0.0, 0.0, 0.0] # level quaterion
+
+        # Pick a new target for the episode
+        self.target = self.np_random.uniform(low=-1.0, high=1.0, size=3)
+        self.target[2] = np.clip(self.target[2] + 0.5, 0.3, 1.0)  # keep the target above the ground
+
+        mujoco.mj_forward(self.m, self.d) # recompute derived quantities
+        obs = self._get_obs()
+        info = {}
+
+        return obs, info
+
+    def _get_obs():
+        return np.concatenate([
+            self.d.qpos[0:3],
+            self.d.qpos[3:7],
+            self.d.qvel[0:3],
+            self.d.qvel[3:6],
+            self.target,
+        ]).astype(np.float32)
