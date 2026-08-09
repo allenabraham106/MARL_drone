@@ -39,7 +39,7 @@ class HoverEnv(gym.Env):
 
         return obs, info
 
-    def _get_obs():
+    def _get_obs(self):
         return np.concatenate([
             self.d.qpos[0:3],
             self.d.qpos[3:7],
