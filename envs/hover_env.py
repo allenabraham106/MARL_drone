@@ -30,8 +30,8 @@ class HoverEnv(gym.Env):
         self.d.qpos[3:7] = [1.0, 0.0, 0.0, 0.0] # level quaterion
 
         # Pick a new target for the episode
-        self.target = self.np_random.uniform(low=-1.0, high=1.0, size=3)
-        self.target[2] = np.clip(self.target[2] + 0.5, 0.3, 1.0)  # keep the target above the ground
+        self.target = self.np_random.uniform(low=-0.3, high=0.3, size=3)
+        self.target[2] = np.clip(self.target[2] + 0.5, 0.4, 0.6)  # keep the target above the ground
 
         mujoco.mj_forward(self.m, self.d) # recompute derived quantities
         obs = self._get_obs()
@@ -47,3 +47,34 @@ class HoverEnv(gym.Env):
             self.d.qvel[3:6],
             self.target,
         ]).astype(np.float32)
+
+    def step(self, action):
+        self.d.ctrl[:] = np.clip(action, self.action_space.low, self.action_space.high)
+        mujoco.mj_step(self.m, self.d)
+
+        obs = self._get_obs()
+
+        # Reward
+        pos_err = np.linalg.norm(self.d.qpos[0:3] - self.target)
+        reward = -pos_err # closer the target the less negative and the higher the number
+
+        # Terminating Conditions
+        terminating = False
+
+        # crashed into the ground
+        if self.d.qpos[2] < 0.05:
+            terminating = True
+            reward -= 10
+
+        # flew way off
+        if pos_err > 5.0:
+            terminating = True
+            reward -= 10.0
+
+        # max episode length
+        truncated = False
+        info = {}
+        return obs, reward, terminating, truncated, info
+
+    
+
