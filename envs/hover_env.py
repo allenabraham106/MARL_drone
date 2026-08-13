@@ -11,6 +11,8 @@ class HoverEnv(gym.Env):
         model_path = os.path.join(script_dir, "..", "models", "single_drone.xml")
         self.m = mujoco.MjModel.from_xml_path(model_path)
         self.d = mujoco.MjData(self.m)
+        self.max_steps = 1000
+        self.step_count = 0
 
         # Action Space, 4 continuous rotor thrust
         self.action_space = spaces.Box(low=0.0, high=5.0, shape=(4,), dtype=np.float32)
@@ -23,6 +25,7 @@ class HoverEnv(gym.Env):
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
+        self.step_count = 0
 
         # Reset all physics states back to zero
         mujoco.mj_resetData(self.m, self.d)
@@ -51,6 +54,7 @@ class HoverEnv(gym.Env):
     def step(self, action):
         self.d.ctrl[:] = np.clip(action, self.action_space.low, self.action_space.high)
         mujoco.mj_step(self.m, self.d)
+        self.step_count += 1
 
         obs = self._get_obs()
 
@@ -72,7 +76,7 @@ class HoverEnv(gym.Env):
             reward -= 10.0
 
         # max episode length
-        truncated = False
+        truncated = self.step_count >= self.max_steps
         info = {}
         return obs, reward, terminating, truncated, info
 
