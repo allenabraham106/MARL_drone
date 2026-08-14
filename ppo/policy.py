@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.distributions import Normal
 
-class ActorCrittic(nn.Module):
+class ActorCritic(nn.Module):
     def __init__(self, obs_dim = 16, action_dim = 4):
         super().__init__()
 
