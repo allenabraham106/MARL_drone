@@ -16,7 +16,7 @@ from buffer import RolloutBuffer
 
 env = HoverEnv()
 policy = ActorCritic(obs_dim = 16, action_dim = 4)
-buffer = RolloutBuffer(buffer_size = 2048, obs_dim = 16, action_dims = 4)
+buffer = RolloutBuffer(buffer_size = 2048, obs_dim = 16, action_dim = 4)
 
 obs, info = env.reset()
 
@@ -30,9 +30,21 @@ for _ in range(buffer.buffer_size):
     buffer.store(obs, action_np, log_prob.item(), value.item(), reward, done)
     obs = next_obs
 
+    # reset on done
+
     if done:
         obs, info = env.reset()
 
 print("Buffer full:", buffer.is_full())
 print("Mean reward collected:", buffer.rewards.mean())
+print("Buffer full:", buffer.is_full())
+print("Mean reward collected:", buffer.rewards.mean())
+print(
+    "Action stats — mean:",
+    buffer.actions.mean(axis=0),
+    "| std:",
+    buffer.actions.std(axis=0),
+)
+print("Sample of first 5 actions:\n", buffer.actions[:5])
+print("Episode lengths (steps where done=True):", np.where(buffer.dones == 1)[0])
 
