@@ -9,7 +9,7 @@ class HoverEnv(gym.Env):
     def __init__(self):
         super().__init__()
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        model_path = os.path.join(script_dir, "..", "models", "single_drone.xml")
+        model_path = os.path.join(script_dir, "..", "models", "racing_drone.xml")
         self.m = mujoco.MjModel.from_xml_path(model_path)
         self.d = mujoco.MjData(self.m)
         self.max_steps = 1000
