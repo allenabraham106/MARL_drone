@@ -31,3 +31,24 @@ class PPO:
         self.value_coef = value_coef
         self.entropy_coef = entropy_coef
 
+    def update(self, obs, actions, old_logs_prob, advantages, returns):
+        # making training stable
+        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+        dataset_size = obs.shape[0]
+
+        # Specific to PPO 
+        for epoch in range(self.epochs):
+            indicies = torch.randperm(dataset_size)
+
+            for start in range(0, dataset_size, self.minibatch_size):
+                end = start + self.minibatch_size
+                batch_idx = indicies[start:end]
+
+                batch_obs = obs[batch_idx]
+                batch_actions = actions[batch_idx]
+                batch_old_logs_prob = old_logs_prob[batch_idx]
+                batch_advantages = advantages[batch_idx]
+                batch_returns = returns[batch_idx]
+
+                
+
