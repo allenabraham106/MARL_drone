@@ -20,39 +20,45 @@ buffer = RolloutBuffer(buffer_size=2048, obs_dim=16, action_dim=4)
 ppo = PPO(policy)
 
 obs, info = env.reset()
+n_iterations = 50
 
-for _ in range(buffer.buffer_size):
-    obs_tensor = torch.as_tensor(obs, dtype=torch.float32)
-    action, log_prob, value = policy.get_action(obs_tensor)
+for iteration in range(n_iterations):
+    buffer.reset()
 
-    action_np = action.detach().numpy()
-    clipped_action = np.clip(action_np, env.action_space.low, env.action_space.high)
+    for _ in range(buffer.buffer_size):
+        obs_tensor = torch.as_tensor(obs, dtype=torch.float32)
+        action, log_prob, value = policy.get_action(obs_tensor)
 
-    next_obs, reward, terminated, truncated, info = env.step(clipped_action)
-    done = terminated or truncated
+        action_np = action.detach().numpy()
+        clipped_action = np.clip(action_np, env.action_space.low, env.action_space.high)
 
-    buffer.store(obs, action_np, log_prob.item(), value.item(), reward, done)
+        next_obs, reward, terminated, truncated, info = env.step(clipped_action)
+        done = terminated or truncated
 
-    obs = next_obs
-    if done:
-        obs, info = env.reset()
+        buffer.store(obs, action_np, log_prob.item(), value.item(), reward, done)
 
-print("Buffer full:", buffer.is_full())
-print("Mean reward collected:", buffer.rewards.mean())
+        obs = next_obs
+        if done:
+            obs, info = env.reset()
 
-with torch.no_grad():
-    _, last_value = policy.forward(torch.as_tensor(obs, dtype=torch.float32))
-last_value = last_value.item()
+    print("Buffer full:", buffer.is_full())
+    print("Mean reward collected:", buffer.rewards.mean())
 
-advantages, returns = compute_gae(
-    buffer.rewards, buffer.values, buffer.dones, last_value
-)
-print("advantages: mean", advantages.mean(), "std", advantages.std())
-print("returns: mean", returns.mean(), "std", returns.std())
+    with torch.no_grad():
+        _, last_value = policy.forward(torch.as_tensor(obs, dtype=torch.float32))
+    last_value = last_value.item()
 
-data = buffer.get()
-advantages_t = torch.as_tensor(advantages, dtype=torch.float32)
-returns_t = torch.as_tensor(returns, dtype=torch.float32)
+    advantages, returns = compute_gae(
+        buffer.rewards, buffer.values, buffer.dones, last_value
+    )
+    print("advantages: mean", advantages.mean(), "std", advantages.std())
+    print("returns: mean", returns.mean(), "std", returns.std())
 
-ppo.update(data["obs"], data["actions"], data["log_probs"], advantages_t, returns_t)
+    data = buffer.get()
+    advantages_t = torch.as_tensor(advantages, dtype=torch.float32)
+    returns_t = torch.as_tensor(returns, dtype=torch.float32)
+
+    ppo.update(data["obs"], data["actions"], data["log_probs"], advantages_t, returns_t)
+    mean_reward = buffer.rewards.mean()
+    print(f"Iteration {iteration:4d} | mean reward: {mean_reward:.3f}")    
 print("PPO update complete")
