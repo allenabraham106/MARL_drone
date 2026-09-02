@@ -17,10 +17,10 @@ from ppo import compute_gae, PPO
 env = HoverEnv()
 policy = ActorCritic(obs_dim=16, action_dim=4)
 buffer = RolloutBuffer(buffer_size=2048, obs_dim=16, action_dim=4)
-ppo = PPO(policy)
+ppo = PPO(policy, entropy_coef=0.0)
 
 obs, info = env.reset()
-n_iterations = 200
+n_iterations = 12000
 
 for iteration in range(n_iterations):
     buffer.reset()
@@ -66,5 +66,10 @@ for iteration in range(n_iterations):
         if len(episode_ends) > 0
         else buffer.buffer_size
     )
-    print(f"Iteration {iteration:4d} | mean reward: {mean_reward:.3f} | mean episode length: {mean_episode_length:.1f}")
-print("PPO update complete")
+    current_std = torch.exp(policy.actor_log_std).detach().numpy()
+    print(
+        f"Iteration {iteration:4d} | mean reward: {mean_reward:.3f} | mean episode length: {mean_episode_length:.1f} | action std: {current_std}"
+    )
+    if iteration % 100 == 0:
+        torch.save(policy.state_dict(), f"checkpoints/checkpoint_{iteration}.pt")
+    print("PPO update complete")

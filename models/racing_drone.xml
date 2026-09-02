@@ -1,0 +1,56 @@
+<mujoco model="racing_quad">
+  <option timestep="0.005" gravity="0 0 -9.81" integrator="RK4"/>
+
+  <asset>
+    <material name="frame_carbon" rgba="0.08 0.08 0.09 1" specular="0.6" shininess="0.4"/>
+    <material name="arm_carbon" rgba="0.1 0.1 0.11 1" specular="0.5" shininess="0.3"/>
+    <material name="prop_red" rgba="0.85 0.1 0.1 0.55" specular="0.3"/>
+    <material name="prop_teal" rgba="0.1 0.75 0.7 0.55" specular="0.3"/>
+    <material name="accent" rgba="0.9 0.75 0.1 1" specular="0.7" shininess="0.6"/>
+  </asset>
+
+  <worldbody>
+    <light diffuse=".6 .6 .6" pos="0 0 3" dir="0 0 -1"/>
+    <geom type="plane" size="5 5 0.1" rgba=".9 .9 .9 1"/>
+
+    <body name="drone" pos="0 0 0.5">
+      <freejoint name="root"/>
+      <inertial pos="0 0 0" mass="0.5" diaginertia="0.0023 0.0023 0.004"/>
+
+      <!-- central flight-controller stack, low profile, X-frame racing look -->
+      <geom type="box" size="0.06 0.06 0.015" material="frame_carbon" mass="0"/>
+      <geom type="box" size="0.03 0.03 0.008" pos="0 0 0.018" material="accent" mass="0"/>
+
+      <!-- rotor reference sites, same positions/physics as original -->
+      <site name="rotor_fr" pos=" 0.15 -0.15 0" size="0.02" rgba="1 0 0 0"/>
+      <site name="rotor_fl" pos=" 0.15  0.15 0" size="0.02" rgba="0 1 0 0"/>
+      <site name="rotor_bl" pos="-0.15  0.15 0" size="0.02" rgba="0 1 0 0"/>
+      <site name="rotor_br" pos="-0.15 -0.15 0" size="0.02" rgba="1 0 0 0"/>
+
+      <!-- slim carbon arms, X configuration -->
+      <geom type="capsule" fromto="0 0 0  0.15 -0.15 0" size="0.006" material="arm_carbon" mass="0.02"/>
+      <geom type="capsule" fromto="0 0 0  0.15  0.15 0" size="0.006" material="arm_carbon" mass="0.02"/>
+      <geom type="capsule" fromto="0 0 0 -0.15  0.15 0" size="0.006" material="arm_carbon" mass="0.02"/>
+      <geom type="capsule" fromto="0 0 0 -0.15 -0.15 0" size="0.006" material="arm_carbon" mass="0.02"/>
+
+      <!-- motor bells at each arm tip -->
+      <geom type="cylinder" pos=" 0.15 -0.15 0" size="0.012 0.012" material="frame_carbon" mass="0"/>
+      <geom type="cylinder" pos=" 0.15  0.15 0" size="0.012 0.012" material="frame_carbon" mass="0"/>
+      <geom type="cylinder" pos="-0.15  0.15 0" size="0.012 0.012" material="frame_carbon" mass="0"/>
+      <geom type="cylinder" pos="-0.15 -0.15 0" size="0.012 0.012" material="frame_carbon" mass="0"/>
+
+      <!-- visual prop discs (thin, semi-transparent, non-colliding) -->
+      <geom type="cylinder" pos=" 0.15 -0.15 0.012" size="0.045 0.001" material="prop_red" contype="0" conaffinity="0" mass="0"/>
+      <geom type="cylinder" pos=" 0.15  0.15 0.012" size="0.045 0.001" material="prop_teal" contype="0" conaffinity="0" mass="0"/>
+      <geom type="cylinder" pos="-0.15  0.15 0.012" size="0.045 0.001" material="prop_red" contype="0" conaffinity="0" mass="0"/>
+      <geom type="cylinder" pos="-0.15 -0.15 0.012" size="0.045 0.001" material="prop_teal" contype="0" conaffinity="0" mass="0"/>
+    </body>
+  </worldbody>
+
+  <actuator>
+    <motor site="rotor_fr" gear="0 0 1 0 0  0.02" ctrlrange="0 5" name="m_fr"/>
+    <motor site="rotor_fl" gear="0 0 1 0 0 -0.02" ctrlrange="0 5" name="m_fl"/>
+    <motor site="rotor_bl" gear="0 0 1 0 0  0.02" ctrlrange="0 5" name="m_bl"/>
+    <motor site="rotor_br" gear="0 0 1 0 0 -0.02" ctrlrange="0 5" name="m_br"/>
+  </actuator>
+</mujoco>

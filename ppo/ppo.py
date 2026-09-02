@@ -52,7 +52,8 @@ class PPO:
 
                 # rerun the current network on same stored observations
                 action_mean, values = self.policy.forward(batch_obs)
-                std = torch.exp(self.policy.actor_log_std)
+                log_std = torch.clamp(self.policy.actor_log_std, min=-2.0, max=1.0)
+                std = torch.exp(log_std)
                 dist = torch.distributions.Normal(action_mean, std)
                 # how likely the current networwork would consider the same action
                 new_log_probs = dist.log_prob(batch_actions).sum(dim=-1)

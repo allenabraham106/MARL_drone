@@ -30,7 +30,8 @@ class ActorCritic(nn.Module):
 
     def get_action(self, obs):
         action_mean, value = self.forward(obs)
-        std = torch.exp(self.actor_log_std)
+        log_std = torch.clamp(self.actor_log_std, min=-2.0, max=1.0)
+        std = torch.exp(log_std)
         dist = Normal(action_mean, std)
         action = dist.sample()
         log_prob = dist.log_prob(action).sum(dim=-1)
