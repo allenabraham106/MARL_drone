@@ -20,7 +20,7 @@ buffer = RolloutBuffer(buffer_size=2048, obs_dim=16, action_dim=4)
 ppo = PPO(policy)
 
 obs, info = env.reset()
-n_iterations = 50
+n_iterations = 200
 
 for iteration in range(n_iterations):
     buffer.reset()
@@ -60,5 +60,11 @@ for iteration in range(n_iterations):
 
     ppo.update(data["obs"], data["actions"], data["log_probs"], advantages_t, returns_t)
     mean_reward = buffer.rewards.mean()
-    print(f"Iteration {iteration:4d} | mean reward: {mean_reward:.3f}")    
+    episode_ends = np.where(buffer.dones == 1)[0]
+    mean_episode_length = (
+        np.mean(np.diff(np.concatenate([[-1], episode_ends])))
+        if len(episode_ends) > 0
+        else buffer.buffer_size
+    )
+    print(f"Iteration {iteration:4d} | mean reward: {mean_reward:.3f} | mean episode length: {mean_episode_length:.1f}")
 print("PPO update complete")
