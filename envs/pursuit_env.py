@@ -84,7 +84,7 @@ class PursuitEnv(gym.Env):
         # did it crash
         if d1_pos[2] < 0.05:
             terminating = True
-            reward -= 10.0
+            reward -= 30.0
 
         # the closer the better
         if dist < 0.2:

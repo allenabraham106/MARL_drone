@@ -17,7 +17,7 @@ class ActorCritic(nn.Module):
         self.actor_mean = nn.Linear(64, action_dim)
 
         # Learnable log
-        self.actor_log_std = nn.Parameter(torch.zeros(action_dim))
+        self.actor_log_std = nn.Parameter(torch.full((action_dim,), -0.5))
 
         # Critic Head (outputs a number)
         self.critic = nn.Linear(64,1)
@@ -30,7 +30,7 @@ class ActorCritic(nn.Module):
 
     def get_action(self, obs):
         action_mean, value = self.forward(obs)
-        log_std = torch.clamp(self.actor_log_std, min=-2.0, max=1.0)
+        log_std = torch.clamp(self.actor_log_std, min=-2.0, max=-0.3)
         std = torch.exp(log_std)
         dist = Normal(action_mean, std)
         action = dist.sample()
