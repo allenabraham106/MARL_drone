@@ -8,6 +8,7 @@ sys.path.insert(
 )
 
 import torch
+import time
 import numpy as np
 from pursuit_env import PursuitEnv
 from policy import ActorCritic
@@ -18,9 +19,10 @@ env = PursuitEnv()
 policy = ActorCritic(obs_dim=19, action_dim=4)
 buffer = RolloutBuffer(buffer_size=2048, obs_dim=19, action_dim=4)
 ppo = PPO(policy, entropy_coef=0.0)
+run_id = int(time.time())
 
 obs, info = env.reset()
-n_iterations = 12000
+n_iterations = 2500
 
 for iteration in range(n_iterations):
     buffer.reset()
@@ -88,5 +90,8 @@ for iteration in range(n_iterations):
         f"| action std: {current_std}"
     )
     if iteration % 100 == 0:
-        torch.save(policy.state_dict(), f"checkpoints/pursuit_checkpoint_{iteration}.pt")
+        torch.save(
+            policy.state_dict(),
+            f"checkpoints/pursuit_checkpoint_{run_id}_{iteration}.pt",
+        )
 print("PPO update complete")
