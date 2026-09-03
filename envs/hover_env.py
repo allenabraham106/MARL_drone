@@ -19,9 +19,7 @@ class HoverEnv(gym.Env):
         self.action_space = spaces.Box(low=0.0, high=5.0, shape=(4,), dtype=np.float32)
 
         # Observation Space, what the policy gets to see
-        self.observation_space = spaces.Box(
-            low=-np.inf, high=np.inf, shape=(16,), dtype=np.float32
-        )
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(16,), dtype=np.float32)
 
         # Hardcoded value, will be randomized
         self.target = np.array([0.0, 0.0, 0.5])
