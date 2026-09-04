@@ -23,8 +23,8 @@ for i in range(500):
     obs_tensor = torch.as_tensor(obs, dtype=torch.float32)
     with torch.no_grad():
         action_mean, value = policy.forward(obs_tensor)
-    action_np = action_mean.numpy()
-
+    action_np = torch.sigmoid(action_mean).numpy() * 5.0
+    
     obs, reward, terminated, truncated, info = env.step(action_np)
     heights.append(env.d.qpos[2])
 

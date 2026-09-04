@@ -23,9 +23,11 @@ ppo = PPO(policy, entropy_coef=0.0)
 run_id = int(time.time())
 
 obs, info = env.reset()
-n_iterations = 2500
+n_iterations = 1000
 
 for iteration in range(n_iterations):
+    curriculum_iterations = 1000
+    env.flee_scale = min(1.0, iteration / curriculum_iterations)
     buffer.reset()
     crash_count = 0
     catch_count = 0
@@ -34,15 +36,15 @@ for iteration in range(n_iterations):
 
     for _ in range(buffer.buffer_size):
         obs_tensor = torch.as_tensor(obs, dtype=torch.float32)
-        action, log_prob, value = policy.get_action(obs_tensor)
+        action, raw_action, log_prob, value = policy.get_action(obs_tensor)
 
         action_np = action.detach().numpy()
-        clipped_action = np.clip(action_np, env.action_space.low, env.action_space.high)
+        raw_action_np = raw_action.detach().numpy()
 
-        next_obs, reward, terminated, truncated, info = env.step(clipped_action)
+        next_obs, reward, terminated, truncated, info = env.step(action_np)
         done = terminated or truncated
 
-        buffer.store(obs, action_np, log_prob.item(), value.item(), reward, done)
+        buffer.store(obs, raw_action_np, log_prob.item(), value.item(), reward, done)
 
         obs = next_obs
         if done:
@@ -84,9 +86,11 @@ for iteration in range(n_iterations):
         if len(episode_ends) > 0
         else buffer.buffer_size
     )
-    current_std = torch.exp(policy.actor_log_std).detach().numpy()
+    log_std_min, log_std_max = -2.0, -0.3
+    log_std_display = log_std_min + 0.5 * (log_std_max - log_std_min) * (torch.tanh(policy.actor_log_std) + 1)
+    current_std = torch.exp(log_std_display).detach().numpy()    
     print(
-        f"Iteration {iteration:4d} | mean reward: {mean_reward:.3f} | mean episode length: {mean_episode_length:.1f} "
+        f"Iteration {iteration:4d} | flee_scale: {env.flee_scale:.2f} | mean reward: {mean_reward:.3f} | mean episode length: {mean_episode_length:.1f} "
         f"| catches: {catch_count} | crashes: {crash_count} | lost: {lost_count} | timeouts: {timeout_count} "
         f"| action std: {current_std}"
     )

@@ -13,6 +13,7 @@ class PursuitEnv(gym.Env):
         self.d = mujoco.MjData(self.m)
         self.max_steps = 1000
         self.step_count = 0
+        self.flee_scale = 0.0
         self.intruder_state = IntruderState()
         self.dt = 0.005
 
@@ -66,7 +67,10 @@ class PursuitEnv(gym.Env):
         self.d.ctrl[0:4] = d1_action
 
         drone1_pos = self.d.qpos[0:3]
-        intruder_action = scripted_intruder_step(self.d, self.m, self.intruder_state, self.dt, drone1_pos)
+        intruder_action = scripted_intruder_step(
+            self.d, self.m, self.intruder_state, self.dt, drone1_pos,
+            flee_distance=1.0 * self.flee_scale
+        )
         self.d.ctrl[4:8] = intruder_action
 
         mujoco.mj_step(self.m, self.d)

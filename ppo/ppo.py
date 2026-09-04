@@ -52,7 +52,8 @@ class PPO:
 
                 # rerun the current network on same stored observations
                 action_mean, values = self.policy.forward(batch_obs)
-                log_std = torch.clamp(self.policy.actor_log_std, min=-2.0, max=-0.3)
+                log_std_min, log_std_max = -2.0, -0.3
+                log_std = log_std_min + 0.5 * (log_std_max - log_std_min) * (torch.tanh(self.policy.actor_log_std) + 1)                
                 std = torch.exp(log_std)
                 dist = torch.distributions.Normal(action_mean, std)
                 # how likely the current networwork would consider the same action
@@ -72,10 +73,13 @@ class PPO:
 
                 value_loss = ((values.squeeze(-1) - batch_returns) ** 2).mean()
 
-                loss = policy_loss + self.value_coef * value_loss - self.entropy_coef * entropy 
+                action_reg = (action_mean**2).mean()
+                loss = policy_loss + self.value_coef * value_loss - self.entropy_coef * entropy + 0.001 * action_reg
 
                 self.optimizer.zero_grad()
                 loss.backward()
+                print( "raw actor_log_std:", self.policy.actor_log_std.data)
+                print("actor_log_std.grad:", self.policy.actor_log_std.grad)  # diagnostic
                 self.optimizer.step()
 
 
