@@ -13,13 +13,12 @@ import numpy as np
 from pursuit_env import PursuitEnv
 from policy import ActorCritic
 from buffer import RolloutBuffer
-from transfer import transfer_hover_to_pursuit
 from ppo import compute_gae, PPO
 
 env = PursuitEnv()
-policy = transfer_hover_to_pursuit("checkpoints/checkpoint_11900.pt")
+policy = ActorCritic(obs_dim=19, action_dim=4)
 buffer = RolloutBuffer(buffer_size=2048, obs_dim=19, action_dim=4)
-ppo = PPO(policy, entropy_coef=0.0)
+ppo = PPO(policy, entropy_coef=0.001)
 run_id = int(time.time())
 
 obs, info = env.reset()

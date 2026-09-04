@@ -16,7 +16,7 @@ from policy import ActorCritic
 
 env = PursuitEnv()
 policy = ActorCritic(obs_dim=19, action_dim=4)
-policy.load_state_dict(torch.load("checkpoints/pursuit_checkpoint_1788471537_400.pt"))
+policy.load_state_dict(torch.load("checkpoints/pursuit_checkpoint_1788530632_900.pt"))
 policy.eval()
 obs, info = env.reset(seed=0)
 step_count = 0
@@ -32,23 +32,22 @@ with mujoco.viewer.launch_passive(env.m, env.d) as viewer:
         time.sleep(0.02)
 
         step_count += 1
-        if step_count <= 10:  # print the first 10 steps of every episode
-            d1_pos = env.d.qpos[0:3]
-            d2_pos = env.d.qpos[7:10]
+        if step_count <= 10:
+            d1_pos = obs[0:3]
+            d1_quat = obs[3:7]
+            d1_vel = obs[7:10]
+            d1_angvel = obs[10:13]
+            rel_pos = obs[13:16]
+            d2_vel = obs[16:19]
+            print(f"step {step_count}")
+            print(f"  d1_pos={d1_pos.round(3)} d1_quat={d1_quat.round(3)}")
+            print(f"  d1_vel={d1_vel.round(3)} d1_angvel={d1_angvel.round(3)}")
+            print(f"  rel_pos={rel_pos.round(3)} d2_vel={d2_vel.round(3)}")
             print(
-                f"step {step_count}: d1_pos={d1_pos.round(3)} d2_pos={d2_pos.round(3)} action={action_np.round(2)}"
+                f"  action_mean(raw)={action_mean.numpy().round(3)} action(squashed)={action_np.round(3)}"
             )
 
         if terminated or truncated:
-            d1_height = env.d.qpos[2]
-            dist = (
-                float(
-                    (env.d.qpos[7:10] - env.d.qpos[0:3])
-                    @ (env.d.qpos[7:10] - env.d.qpos[0:3])
-                )
-                ** 0.5
-            )
-            print(
-                f"Episode ended | terminated={terminated} truncated={truncated} | d1_height={d1_height:.3f} | dist={dist:.3f} — resetting"
-            )
+            print(f"Episode ended at step {step_count}\n")
             obs, info = env.reset()
+            step_count = 0

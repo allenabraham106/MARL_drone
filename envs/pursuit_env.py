@@ -14,6 +14,7 @@ class PursuitEnv(gym.Env):
         self.max_steps = 1000
         self.step_count = 0
         self.flee_scale = 0.0
+        self.prev_action = np.zeros(4)
         self.intruder_state = IntruderState()
         self.dt = 0.005
 
@@ -40,6 +41,7 @@ class PursuitEnv(gym.Env):
         mujoco.mj_forward(self.m, self.d)
         obs = self._get_obs()
         info = {}
+        self.prev_action = np.zeros(4)
         return obs, info
 
     def _get_obs(self):
@@ -82,7 +84,11 @@ class PursuitEnv(gym.Env):
         d2_pos = self.d.qpos[7:10]
         dist = np.linalg.norm(d2_pos - d1_pos)
 
-        reward = -dist
+        effective_dist = min(dist, 4.0)
+        action_change = np.linalg.norm(action - self.prev_action)
+        self.prev_action = action.copy()
+
+        reward = -effective_dist - 0.05 * action_change
 
         terminating = False
         # did it crash
