@@ -78,8 +78,6 @@ class PPO:
 
                 self.optimizer.zero_grad()
                 loss.backward()
-                print( "raw actor_log_std:", self.policy.actor_log_std.data)
-                print("actor_log_std.grad:", self.policy.actor_log_std.grad)  # diagnostic
                 self.optimizer.step()
 
 
