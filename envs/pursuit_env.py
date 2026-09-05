@@ -15,6 +15,7 @@ class PursuitEnv(gym.Env):
         self.step_count = 0
         self.flee_scale = 0.0
         self.prev_action = np.zeros(4)
+        self.prev_potential = 0.0
         self.intruder_state = IntruderState()
         self.dt = 0.005
 
@@ -31,6 +32,8 @@ class PursuitEnv(gym.Env):
         super().reset(seed=seed)
         self.step_count = 0
         self.intruder_state = IntruderState()
+        self.prev_action = np.zeros(4)
+        self.prev_potential = 0.0
 
         # Drone1 fixed start
         self.d.qpos[0:3] = [0.0, 0.0, 0.5]
@@ -43,9 +46,13 @@ class PursuitEnv(gym.Env):
         self.d.qpos[10:14] = [1.0, 0.0, 0.0, 0.0]
 
         mujoco.mj_forward(self.m, self.d)
+        d1_pos_init = self.d.qpos[0:3]
+        d2_pos_init = self.d.qpos[7:10]
+        dist_init = np.linalg.norm(d2_pos_init - d1_pos_init)
+        self.prev_potential = -min(dist_init, 4.0)
+
         obs = self._get_obs()
         info = {}
-        self.prev_action = np.zeros(4)
         return obs, info
 
     def _get_obs(self):
@@ -92,11 +99,17 @@ class PursuitEnv(gym.Env):
         d2_pos = self.d.qpos[7:10]
         dist = np.linalg.norm(d2_pos - d1_pos)
 
-        effective_dist = min(dist, 4.0)
+        curr_potential = -min(dist, 4.0)
+        progress = curr_potential - self.prev_potential
+        self.prev_potential = curr_potential
+
         action_change = np.linalg.norm(action - self.prev_action)
         self.prev_action = action.copy()
 
-        reward = -effective_dist - 0.05 * action_change
+        hover_thrust_total = sum(self.m.body_mass[0:1]) * 9.81  # drone1's own weight
+        low_thrust_penalty = max(0.0, hover_thrust_total - action[0]) * 0.1
+
+        reward = progress - 0.05 * action_change - low_thrust_penalty
 
         terminating = False
         if d1_pos[2] < 0.05:

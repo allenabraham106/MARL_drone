@@ -32,6 +32,7 @@ for iteration in range(n_iterations):
     catch_count = 0
     lost_count = 0
     timeout_count = 0
+    step_heights = []
 
     for _ in range(buffer.buffer_size):
         obs_tensor = torch.as_tensor(obs, dtype=torch.float32)
@@ -42,7 +43,7 @@ for iteration in range(n_iterations):
 
         next_obs, reward, terminated, truncated, info = env.step(action_np)
         done = terminated or truncated
-
+        step_heights.append(env.d.qpos[2])
         buffer.store(obs, raw_action_np, log_prob.item(), value.item(), reward, done)
 
         obs = next_obs
@@ -86,10 +87,14 @@ for iteration in range(n_iterations):
         else buffer.buffer_size
     )
     log_std_min, log_std_max = -2.0, -0.3
-    log_std_display = log_std_min + 0.5 * (log_std_max - log_std_min) * (torch.tanh(policy.actor_log_std) + 1)
-    current_std = torch.exp(log_std_display).detach().numpy()    
+    log_std_display = log_std_min + 0.5 * (log_std_max - log_std_min) * (
+        torch.tanh(policy.actor_log_std) + 1
+    )
+    current_std = torch.exp(log_std_display).detach().numpy()
+    mean_height = np.mean(step_heights)
     print(
         f"Iteration {iteration:4d} | flee_scale: {env.flee_scale:.2f} | mean reward: {mean_reward:.3f} | mean episode length: {mean_episode_length:.1f} "
+        f"| mean height: {mean_height:.3f} "
         f"| catches: {catch_count} | crashes: {crash_count} | lost: {lost_count} | timeouts: {timeout_count} "
         f"| action std: {current_std}"
     )
