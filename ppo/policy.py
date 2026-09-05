@@ -36,5 +36,7 @@ class ActorCritic(nn.Module):
         dist = Normal(action_mean, std)
         raw_action = dist.sample()
         log_prob = dist.log_prob(raw_action).sum(dim=-1)
-        action = torch.sigmoid(raw_action) * 5.0
+        thrust = torch.sigmoid(raw_action[..., 0:1]) * 6.0
+        rates = torch.tanh(raw_action[..., 1:4]) * 5.0
+        action = torch.cat([thrust, rates], dim=-1)
         return action, raw_action, log_prob, value

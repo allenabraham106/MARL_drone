@@ -22,7 +22,7 @@ ppo = PPO(policy, entropy_coef=0.001)
 run_id = int(time.time())
 
 obs, info = env.reset()
-n_iterations = 1000
+n_iterations = 12000
 
 for iteration in range(n_iterations):
     curriculum_iterations = 1000

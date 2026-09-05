@@ -19,7 +19,11 @@ class PursuitEnv(gym.Env):
         self.dt = 0.005
 
         # only one RL controlled drone for now
-        self.action_space = spaces.Box(low=0.0, high=5.0, shape=(4,), dtype=np.float32)
+        self.action_space = spaces.Box(
+            low=np.array([0.0, -5.0, -5.0, -5.0]),
+            high=np.array([6.0, 5.0, 5.0, 5.0]),
+            dtype=np.float32,
+        )
 
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(19,), dtype=np.float32)
 
@@ -65,8 +69,12 @@ class PursuitEnv(gym.Env):
         ]).astype(np.float32)
 
     def step(self, action):
-        d1_action = np.clip(action, self.action_space.low, self.action_space.high)
-        self.d.ctrl[0:4] = d1_action
+        action = np.clip(action, self.action_space.low, self.action_space.high)
+        desired_thrust = action[0]
+        desired_rates = action[1:4]
+
+        d1_ctrl = rate_controller(self.d, self.m, desired_thrust, desired_rates, body_offset=0)
+        self.d.ctrl[0:4] = d1_ctrl
 
         drone1_pos = self.d.qpos[0:3]
         intruder_action = scripted_intruder_step(
@@ -91,12 +99,9 @@ class PursuitEnv(gym.Env):
         reward = -effective_dist - 0.05 * action_change
 
         terminating = False
-        # did it crash
         if d1_pos[2] < 0.05:
             terminating = True
             reward -= 50.0
-
-        # the closer the better
         if dist < 0.2:
             terminating = True
             reward += 20.0
@@ -184,5 +189,23 @@ def scripted_intruder_step(d, m, state, dt, drone1_pos, flee_distance=1.0):
     thrust_fl = base_thrust + roll_corr - pitch_corr
     thrust_bl = base_thrust + roll_corr + pitch_corr
     thrust_br = base_thrust - roll_corr + pitch_corr
+
+    return np.clip([thrust_fr, thrust_fl, thrust_bl, thrust_br], 0, 5)
+
+def rate_controller(d, m, desired_thurst, desired_rates, body_offset=0, qpos_offset=0):
+    angvel = d.qvel[3+body_offset:6+body_offset]
+    rate_err = np.array(desired_rates) - angvel
+    Kp_rate = 0.15
+
+    roll_corr = Kp_rate * rate_err[0]
+    pitch_corr = Kp_rate * rate_err[1]
+    yaw_corr = Kp_rate * rate_err[2]
+
+    base = desired_thurst / 4.0
+
+    thrust_fr = base - roll_corr - pitch_corr + yaw_corr
+    thrust_fl = base + roll_corr - pitch_corr - yaw_corr
+    thrust_bl = base + roll_corr + pitch_corr + yaw_corr
+    thrust_br = base - roll_corr + pitch_corr - yaw_corr
 
     return np.clip([thrust_fr, thrust_fl, thrust_bl, thrust_br], 0, 5)
