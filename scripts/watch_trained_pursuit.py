@@ -16,9 +16,9 @@ from policy import ActorCritic
 
 env = PursuitEnv()
 policy = ActorCritic(obs_dim=19, action_dim=4)
-policy.load_state_dict(torch.load("checkpoints/pursuit_checkpoint_1788581118_11900.pt"))
+policy.load_state_dict(torch.load("checkpoints/pursuit_checkpoint_1788587371_11900.pt"))
 policy.eval()
-obs, info = env.reset()
+obs, info = env.reset(seed=0)
 step_count = 0
 
 with mujoco.viewer.launch_passive(env.m, env.d) as viewer:
