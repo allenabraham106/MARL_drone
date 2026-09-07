@@ -117,10 +117,10 @@ class PursuitEnv(gym.Env):
             reward -= 50.0
         if dist < 0.2:
             terminating = True
-            reward += 20.0
+            reward += 60.0
         if dist > 4.0:
             terminating = True
-            reward -= 30.0
+            reward -= 10.0
 
         truncated = self.step_count >= self.max_steps
         info = {}
