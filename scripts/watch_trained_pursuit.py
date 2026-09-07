@@ -16,7 +16,7 @@ from policy import ActorCritic
 
 env = PursuitEnv()
 policy = ActorCritic(obs_dim=19, action_dim=4)
-policy.load_state_dict(torch.load("checkpoints/pursuit_checkpoint_1788621838_7000.pt"))
+policy.load_state_dict(torch.load("checkpoints/pursuit_checkpoint_1788753005_11700.pt"))
 policy.eval()
 obs, info = env.reset(seed=0)
 step_count = 0

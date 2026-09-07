@@ -61,10 +61,11 @@ def evaluate_checkpoint(path, n_episodes=50):
 
 
 for ckpt in [
-    "checkpoints/pursuit_checkpoint_1788661757_2000.pt",
-    "checkpoints/pursuit_checkpoint_1788661757_4000.pt",
-    "checkpoints/pursuit_checkpoint_1788661757_6000.pt",
-    "checkpoints/pursuit_checkpoint_1788661757_8000.pt",
-    "checkpoints/pursuit_checkpoint_1788661757_10000.pt",
+    "checkpoints/pursuit_checkpoint_1788753005_11900.pt",
+    "checkpoints/pursuit_checkpoint_1788753005_11800.pt",
+    "checkpoints/pursuit_checkpoint_1788753005_11700.pt",
+    "checkpoints/pursuit_checkpoint_1788753005_11600.pt",
+    "checkpoints/pursuit_checkpoint_1788753005_11500.pt",
 ]:
     evaluate_checkpoint(ckpt)
+
