@@ -120,7 +120,7 @@ class PursuitEnv(gym.Env):
             reward += 20.0
         if dist > 4.0:
             terminating = True
-            reward -= 10.0
+            reward -= 30.0
 
         truncated = self.step_count >= self.max_steps
         info = {}
@@ -210,9 +210,13 @@ def rate_controller(d, m, desired_thurst, desired_rates, body_offset=0, qpos_off
     rate_err = np.array(desired_rates) - angvel
     Kp_rate = 0.15
 
-    roll_corr = Kp_rate * rate_err[0]
-    pitch_corr = Kp_rate * rate_err[1]
-    yaw_corr = Kp_rate * rate_err[2]
+    J_diag = np.array([0.0023, 0.0023, 0.004])
+    Jw = J_diag * angvel
+    gyro_term = np.cross(angvel, Jw)
+
+    roll_corr = Kp_rate * rate_err[0] + gyro_term[0]
+    pitch_corr = Kp_rate * rate_err[1] + gyro_term[1]
+    yaw_corr = Kp_rate * rate_err[2] + gyro_term[2]
 
     base = desired_thurst / 4.0
 
