@@ -19,7 +19,8 @@ for ep in range(50):
 
     for step in range(1000):
         drone2_pos = env.d.qpos[7:10]
-        action = scripted_pursuer_ctbr(env.d, env.m, pursuer_state, env.dt, drone2_pos)
+        drone2_vel = env.d.qpos[6:9]
+        action = scripted_pursuer_ctbr(env.d, env.m, pursuer_state, env.dt, drone2_pos, drone2_vel)
         obs, reward, terminated, truncated, info = env.step(action)
         if terminated or truncated:
             d1_height = env.d.qpos[2]

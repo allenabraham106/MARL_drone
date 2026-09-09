@@ -227,15 +227,15 @@ def rate_controller(d, m, desired_thurst, desired_rates, body_offset=0, qpos_off
 
     return np.clip([thrust_fr, thrust_fl, thrust_bl, thrust_br], 0, 5)
 
-def scripted_pursuer_ctbr(d, m, state, dt, drone2_pos, catch_distance=0.0):
+def scripted_pursuer_ctbr(d, m, state, dt, drone2_pos, drone2_vel, catch_distance=0.0, lookahead_time=0.1):
     d1_pos = d.qpos[0:3]
     d1_quat = d.qpos[3:7]
     d1_vel = d.qvel[0:3]
-    d1_angvel = d.qvel[3:6]
 
     # target: fly toward the intruder's current position
-    target_xy = drone2_pos[0:2]
-    target_z = drone2_pos[2]
+    predicted_pos = drone2_pos + drone2_vel * lookahead_time
+    target_xy = predicted_pos[0:2]
+    target_z = predicted_pos[2]
 
     # position to desired roll/pitch
     x_err = target_xy[0] - d1_pos[0]

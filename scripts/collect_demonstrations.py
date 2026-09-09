@@ -22,7 +22,8 @@ for ep in range(n_episodes):
 
     for step in range(1000):
         drone2_pos = env.d.qpos[7:10]
-        action = scripted_pursuer_ctbr(env.d, env.m, pursuer_state, env.dt, drone2_pos)
+        drone2_vel = env.d.qvel[6:9]
+        action = scripted_pursuer_ctbr(env.d, env.m, pursuer_state, env.dt, drone2_pos, drone2_vel)
 
         observations.append(obs.copy())
         actions.append(action.copy())
