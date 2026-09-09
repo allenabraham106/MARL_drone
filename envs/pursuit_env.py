@@ -226,3 +226,48 @@ def rate_controller(d, m, desired_thurst, desired_rates, body_offset=0, qpos_off
     thrust_br = base - roll_corr + pitch_corr - yaw_corr
 
     return np.clip([thrust_fr, thrust_fl, thrust_bl, thrust_br], 0, 5)
+
+def scripted_pursuer_ctbr(d, m, state, dt, drone2_pos, catch_distance=0.0):
+    d1_pos = d.qpos[0:3]
+    d1_quat = d.qpos[3:7]
+    d1_vel = d.qvel[0:3]
+    d1_angvel = d.qvel[3:6]
+
+    # target: fly toward the intruder's current position
+    target_xy = drone2_pos[0:2]
+    target_z = drone2_pos[2]
+
+    # position to desired roll/pitch
+    x_err = target_xy[0] - d1_pos[0]
+    y_err = target_xy[1] - d1_pos[1]
+    x_vel, y_vel = d1_vel[0], d1_vel[1]
+
+    state.x_integral = np.clip(state.x_integral + x_err * dt, -0.5, 0.5)
+    state.y_integral = np.clip(state.y_integral + y_err * dt, -0.5, 0.5)
+    Kp_pos, Ki_pos, Kd_pos = 0.15, 0.01, 0.3
+
+    desired_pitch = Kp_pos * x_err + Ki_pos * state.x_integral - Kd_pos * x_vel
+    desired_roll = -(Kp_pos * y_err + Ki_pos * state.y_integral - Kd_pos * y_vel)
+    max_tilt = 0.3
+    desired_roll = np.clip(desired_roll, -max_tilt, max_tilt)
+    desired_pitch = np.clip(desired_pitch, -max_tilt, max_tilt)
+
+    # attitude error
+    roll, pitch = get_roll_pitch(d1_quat)
+    roll_rate_cmd = 3.0 * (desired_roll - roll)
+    pitch_rate_cmd = 3.0 * (desired_pitch - pitch)
+    yaw_rate_cmd = 0.0
+
+    # collective thrust
+    z_err = target_z - d1_pos[2]
+    z_vel = d1_vel[2]
+    state.z_integral = np.clip(state.z_integral + z_err * dt, -1.0, 1.0)
+    Kp_z, Ki_z, Kd_z  = 20.0, 2.0, 8.0
+    thrust_total = (
+        (sum(m.body_mass[0:1]) * 9.81) + Kp_z * z_err + Ki_z * state.z_integral - Kd_z * z_vel
+    )
+    thrust_total = np.clip(thrust_total, 0.0, 6.0)
+
+    action = np.array([thrust_total, roll_rate_cmd, pitch_rate_cmd, yaw_rate_cmd])
+    action = np.clip(action, [0.0, -5.0, -5.0, -5.0], [6.0, 5.0, 5.0, 5.0])
+    return action
